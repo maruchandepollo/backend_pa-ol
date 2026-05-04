@@ -1,6 +1,6 @@
 # Backend - Sistema de Gestión de Pañol
 
-API REST desarrollada para gestionar el inventario y movimientos de productos en un sistema de pañol. Este backend permite registrar, consultar y administrar productos, sirviendo como base para una aplicación web de control de inventario.
+API REST desarrollada para gestionar inventario y movimientos de productos en un sistema de pañol. Permite controlar stock en tiempo real, registrar entradas y salidas, y mantener trazabilidad de los movimientos.
 
 ---
 
@@ -8,9 +8,9 @@ API REST desarrollada para gestionar el inventario y movimientos de productos en
 
 - Node.js
 - Express
-- PostgreSQL
-- pg (node-postgres)
-- Nodemon (entorno de desarrollo)
+- MySQL
+- mysql2
+- Nodemon
 - CORS
 - Dotenv
 
@@ -19,11 +19,11 @@ API REST desarrollada para gestionar el inventario y movimientos de productos en
 ## Estructura del proyecto
 
 src/
-  ├── config/        # Configuración de base de datos
+  ├── config/        # Conexión a base de datos
+  ├── models/        # Acceso a datos
   ├── controllers/   # Lógica de negocio
-  ├── models/        # Acceso a datos (queries)
-  ├── routes/        # Definición de endpoints
-  └── index.js       # Punto de entrada del servidor
+  ├── routes/        # Endpoints
+  └── index.js       # Inicialización del servidor
 
 ---
 
@@ -40,14 +40,13 @@ npm install
 
 3. Configurar variables de entorno
 
-Crear archivo `.env` en la raíz:
+Crear archivo `.env`:
 
 PORT=3000
-DB_USER=postgres
 DB_HOST=localhost
-DB_NAME=panol
+DB_USER=root
 DB_PASSWORD=tu_password
-DB_PORT=5432
+DB_NAME=panol
 
 4. Ejecutar servidor
 
@@ -57,34 +56,77 @@ npm run dev
 
 ## Base de datos
 
-Crear base de datos en PostgreSQL:
+Crear base de datos:
 
 CREATE DATABASE panol;
+USE panol;
 
-Tabla inicial:
+Tablas:
 
 CREATE TABLE productos (
-  id SERIAL PRIMARY KEY,
-  nombre TEXT,
-  modelo TEXT,
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(100),
+  modelo VARCHAR(100),
   cantidad INT
-);
+) ENGINE=InnoDB;
+
+CREATE TABLE movimientos (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  producto_id INT,
+  tipo VARCHAR(20),
+  cantidad INT,
+  persona VARCHAR(100),
+  area VARCHAR(100),
+  fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (producto_id) REFERENCES productos(id)
+) ENGINE=InnoDB;
 
 ---
 
-## Endpoints disponibles
+## Endpoints
 
-GET /productos
+### Productos
 
-POST /productos
+GET /productos  
+Obtiene todos los productos
 
-Body ejemplo:
+POST /productos  
+Crea un producto
+
+Body:
 
 {
   "nombre": "Taladro",
-  "modelo": "Bosch X",
-  "cantidad": 10
+  "modelo": "Bosch",
+  "cantidad": 5
 }
+
+---
+
+### Movimientos
+
+POST /movimientos  
+Registra entrada o salida de productos y actualiza el stock
+
+Body:
+
+{
+  "producto_id": 1,
+  "tipo": "salida",
+  "cantidad": 2,
+  "persona": "Juan",
+  "area": "Operaciones"
+}
+
+---
+
+## Lógica de negocio
+
+- Las salidas descuentan stock
+- Las entradas aumentan stock
+- No se permite stock negativo
+- Se utilizan transacciones para asegurar consistencia
+- Cada movimiento queda registrado con fecha automática
 
 ---
 
@@ -93,20 +135,22 @@ Body ejemplo:
 En desarrollo
 
 Actualmente incluye:
-- Servidor Express configurado
-- Conexión a base de datos PostgreSQL
-- CRUD básico de productos (parcial)
+- CRUD de productos
+- Registro de movimientos
+- Control de stock en tiempo real
+- Validaciones básicas
+- Manejo de errores
 
 Pendiente:
-- Gestión de movimientos (entradas/salidas)
-- Validación de stock
 - Autenticación de usuarios
 - Control de roles
+- Filtros y reportes de movimientos
+- Exportación de datos
 - Deploy
 
 ---
 
 ## Notas
 
-- Proyecto desarrollado como parte de práctica profesional.
-- Enfocado en resolver necesidades reales del área de operaciones y servicios.
+- Proyecto desarrollado como parte de práctica profesional
+- Orientado a uso real en el área de operaciones y servicios
